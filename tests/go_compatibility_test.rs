@@ -11,6 +11,7 @@ fn go_implementation_available() -> bool {
 }
 
 /// Create a DAG using the Go implementation
+#[allow(dead_code)]
 fn create_dag_with_go(input_path: &str, output_cbor: &str) -> std::io::Result<std::process::Output> {
     Command::new("go")
         .args(&[

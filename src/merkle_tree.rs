@@ -14,9 +14,6 @@ pub struct MerkleTree {
 
     /// Mapping of keys to indices
     key_to_index: HashMap<String, usize>,
-
-    /// Original leaves
-    leaves: Vec<Vec<u8>>,
 }
 
 impl MerkleTree {
@@ -48,7 +45,6 @@ impl MerkleTree {
             root,
             proofs,
             key_to_index,
-            leaves,
         })
     }
 
@@ -169,6 +165,7 @@ pub fn verify_proof(data: &[u8], proof: &MerkleProof, root: &[u8]) -> Result<()>
 }
 
 /// Build a merkle tree root directly from pre-hashed leaves
+/// Matches Go's txaty/go-merkletree behavior by duplicating odd nodes
 pub fn build_merkle_root(leaves: &[Vec<u8>]) -> Vec<u8> {
     if leaves.is_empty() {
         return vec![];
@@ -178,16 +175,28 @@ pub fn build_merkle_root(leaves: &[Vec<u8>]) -> Vec<u8> {
     }
 
     let mut current_level = leaves.to_vec();
+
+    // Fix odd length by duplicating the last node (matching Go's fixOddLength)
+    if current_level.len() % 2 == 1 {
+        let last = current_level.last().unwrap().clone();
+        current_level.push(last);
+    }
+
     while current_level.len() > 1 {
         let mut next_level = Vec::new();
+
+        // Process pairs - all should be pairs now since we fix odd lengths
         for chunk in current_level.chunks(2) {
-            let hash = if chunk.len() == 2 {
-                hash_pair(&chunk[0], &chunk[1])
-            } else {
-                chunk[0].clone()
-            };
+            let hash = hash_pair(&chunk[0], &chunk[1]);
             next_level.push(hash);
         }
+
+        // Fix odd length for next iteration
+        if next_level.len() % 2 == 1 && next_level.len() > 1 {
+            let last = next_level.last().unwrap().clone();
+            next_level.push(last);
+        }
+
         current_level = next_level;
     }
     current_level[0].clone()

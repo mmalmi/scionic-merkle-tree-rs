@@ -44,6 +44,7 @@ fn create_dag_with_go_chunk_size(
 }
 
 /// Create DAG with Rust using a helper that sets chunk size
+#[allow(dead_code)]
 fn create_dag_with_rust_chunk_size(
     input_path: &str,
     output_cbor: &str,

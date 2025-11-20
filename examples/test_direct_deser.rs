@@ -12,6 +12,7 @@ struct TestDag {
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 struct TestLeaf {
     #[serde(rename = "Hash")]
     hash: String,
