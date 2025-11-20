@@ -62,12 +62,12 @@ impl DagLeafBuilder {
             item_name: String,
             #[serde(rename = "Type")]
             leaf_type: String,
-            #[serde(rename = "MerkleRoot")]
+            #[serde(rename = "MerkleRoot", with = "serde_bytes")]
             merkle_root: Vec<u8>,
             #[serde(rename = "CurrentLinkCount")]
             current_link_count: usize,
             #[serde(rename = "ContentHash")]
-            content_hash: Option<Vec<u8>>,
+            content_hash: Option<serde_bytes::ByteBuf>,
             #[serde(rename = "AdditionalData")]
             additional_data: Vec<(String, String)>,
         }
@@ -77,7 +77,7 @@ impl DagLeafBuilder {
             leaf_type: leaf_type.to_string(),
             merkle_root: merkle_root.clone().unwrap_or_default(),
             current_link_count: self.links.len(),
-            content_hash: content_hash.clone(),
+            content_hash: content_hash.clone().map(serde_bytes::ByteBuf::from),
             additional_data: sort_map_for_verification(&additional_data),
         };
 
@@ -164,17 +164,89 @@ impl DagLeafBuilder {
 
         let leaf_count = leaves.len() + 1; // +1 for root itself
 
-        // Calculate DAG size (approximate for now)
-        let dag_size: i64 = 0; // Will be calculated properly after leaf creation
+        // Calculate children DAG size by serializing each child leaf
+        // Must match Go's CalculateTotalDagSize which serializes specific fields
+        let mut children_dag_size: i64 = 0;
+        for (_hash, leaf) in leaves.iter() {
+            #[derive(Serialize)]
+            struct LeafForSize {
+                #[serde(rename = "Hash")]
+                hash: String,
+                #[serde(rename = "ItemName")]
+                item_name: String,
+                #[serde(rename = "Type")]
+                leaf_type: String,
+                #[serde(rename = "ContentHash")]
+                content_hash: Option<serde_bytes::ByteBuf>,
+                #[serde(rename = "Content")]
+                content: Option<serde_bytes::ByteBuf>,
+                #[serde(rename = "ClassicMerkleRoot", with = "serde_bytes")]
+                classic_merkle_root: Vec<u8>,
+                #[serde(rename = "CurrentLinkCount")]
+                current_link_count: usize,
+                #[serde(rename = "LeafCount")]
+                leaf_count: usize,
+                #[serde(rename = "ContentSize")]
+                content_size: i64,
+                #[serde(rename = "DagSize")]
+                dag_size: i64,
+                #[serde(rename = "Links")]
+                links: Vec<String>,
+                #[serde(rename = "AdditionalData")]
+                additional_data: HashMap<String, String>,
+            }
 
-        // Create leaf data for hashing
+            let mut sorted_links = leaf.links.clone();
+            sorted_links.sort();
+
+            let leaf_for_size = LeafForSize {
+                hash: leaf.hash.clone(),
+                item_name: leaf.item_name.clone(),
+                leaf_type: leaf.leaf_type.to_string(),
+                content_hash: leaf.content_hash.clone().map(serde_bytes::ByteBuf::from),
+                content: leaf.content.clone().map(serde_bytes::ByteBuf::from),
+                classic_merkle_root: leaf.classic_merkle_root.clone().unwrap_or_default(),
+                current_link_count: leaf.current_link_count,
+                leaf_count: leaf.leaf_count.unwrap_or(0),
+                content_size: leaf.content_size.unwrap_or(0),
+                dag_size: leaf.dag_size.unwrap_or(0),
+                links: sorted_links,
+                additional_data: leaf.additional_data.clone().unwrap_or_default(),
+            };
+
+            let leaf_cbor = serde_cbor::to_vec(&leaf_for_size)
+                .map_err(|e| ScionicError::Serialization(e.to_string()))?;
+            children_dag_size += leaf_cbor.len() as i64;
+        }
+
+        // First pass: calculate temporary root size with DagSize=0
+        let temp_leaf_data = RootLeafData {
+            item_name: self.item_name.clone(),
+            leaf_type: leaf_type.to_string(),
+            merkle_root: merkle_root.clone().unwrap_or_default(),
+            current_link_count: self.links.len(),
+            leaf_count,
+            content_size,
+            dag_size: 0,
+            content_hash: content_hash.clone().map(serde_bytes::ByteBuf::from),
+            additional_data: sort_map_for_verification(&additional_data),
+        };
+
+        let temp_serialized = serde_cbor::to_vec(&temp_leaf_data)
+            .map_err(|e| ScionicError::Serialization(e.to_string()))?;
+        let root_leaf_size = temp_serialized.len() as i64;
+
+        // Calculate final DAG size
+        let dag_size = children_dag_size + root_leaf_size;
+
+        // Second pass: Create final leaf data for hashing
         #[derive(Serialize)]
         struct RootLeafData {
             #[serde(rename = "ItemName")]
             item_name: String,
             #[serde(rename = "Type")]
             leaf_type: String,
-            #[serde(rename = "MerkleRoot")]
+            #[serde(rename = "MerkleRoot", with = "serde_bytes")]
             merkle_root: Vec<u8>,
             #[serde(rename = "CurrentLinkCount")]
             current_link_count: usize,
@@ -185,7 +257,7 @@ impl DagLeafBuilder {
             #[serde(rename = "DagSize")]
             dag_size: i64,
             #[serde(rename = "ContentHash")]
-            content_hash: Option<Vec<u8>>,
+            content_hash: Option<serde_bytes::ByteBuf>,
             #[serde(rename = "AdditionalData")]
             additional_data: Vec<(String, String)>,
         }
@@ -198,7 +270,7 @@ impl DagLeafBuilder {
             leaf_count,
             content_size,
             dag_size,
-            content_hash: content_hash.clone(),
+            content_hash: content_hash.clone().map(serde_bytes::ByteBuf::from),
             additional_data: sort_map_for_verification(&additional_data),
         };
 
@@ -251,12 +323,12 @@ impl DagLeaf {
             item_name: String,
             #[serde(rename = "Type")]
             leaf_type: String,
-            #[serde(rename = "MerkleRoot")]
+            #[serde(rename = "MerkleRoot", with = "serde_bytes")]
             merkle_root: Vec<u8>,
             #[serde(rename = "CurrentLinkCount")]
             current_link_count: usize,
             #[serde(rename = "ContentHash")]
-            content_hash: Option<Vec<u8>>,
+            content_hash: Option<serde_bytes::ByteBuf>,
             #[serde(rename = "AdditionalData")]
             additional_data: Vec<(String, String)>,
         }
@@ -266,7 +338,7 @@ impl DagLeaf {
             leaf_type: self.leaf_type.to_string(),
             merkle_root: self.classic_merkle_root.clone().unwrap_or_default(),
             current_link_count: self.current_link_count,
-            content_hash: self.content_hash.clone(),
+            content_hash: self.content_hash.clone().map(serde_bytes::ByteBuf::from),
             additional_data: sort_map_for_verification(&self.additional_data),
         };
 
@@ -305,7 +377,7 @@ impl DagLeaf {
             item_name: String,
             #[serde(rename = "Type")]
             leaf_type: String,
-            #[serde(rename = "MerkleRoot")]
+            #[serde(rename = "MerkleRoot", with = "serde_bytes")]
             merkle_root: Vec<u8>,
             #[serde(rename = "CurrentLinkCount")]
             current_link_count: usize,
@@ -316,7 +388,7 @@ impl DagLeaf {
             #[serde(rename = "DagSize")]
             dag_size: i64,
             #[serde(rename = "ContentHash")]
-            content_hash: Option<Vec<u8>>,
+            content_hash: Option<serde_bytes::ByteBuf>,
             #[serde(rename = "AdditionalData")]
             additional_data: Vec<(String, String)>,
         }
@@ -329,7 +401,7 @@ impl DagLeaf {
             leaf_count: self.leaf_count.unwrap_or(0),
             content_size: self.content_size.unwrap_or(0),
             dag_size: self.dag_size.unwrap_or(0),
-            content_hash: self.content_hash.clone(),
+            content_hash: self.content_hash.clone().map(serde_bytes::ByteBuf::from),
             additional_data: sort_map_for_verification(&self.additional_data),
         };
 
