@@ -1,5 +1,5 @@
 use crate::error::{Result, ScionicError};
-use crate::merkle_tree::MerkleTreeBuilder;
+use crate::merkle_tree::{build_merkle_root, MerkleTreeBuilder};
 use crate::types::{ClassicTreeBranch, DagLeaf, DagLeafBuilder, LeafType};
 use cid::Cid;
 use multihash::Multihash;
@@ -13,15 +13,15 @@ fn cid_to_string(cid: &Cid) -> String {
 }
 
 /// Sort a HashMap by keys and return as Vec of tuples
+/// Always returns empty vec (never nil/null) to match Go's behavior
 fn sort_map_for_verification(map: &Option<HashMap<String, String>>) -> Vec<(String, String)> {
-    match map {
-        None => Vec::new(),
-        Some(m) => {
-            let mut pairs: Vec<_> = m.iter().map(|(k, v)| (k.clone(), v.clone())).collect();
-            pairs.sort_by(|a, b| a.0.cmp(&b.0));
-            pairs
-        }
+    let m = map.as_ref().map(|m| m.clone()).unwrap_or_default();
+    if m.is_empty() {
+        return Vec::new();
     }
+    let mut pairs: Vec<_> = m.iter().map(|(k, v)| (k.clone(), v.clone())).collect();
+    pairs.sort_by(|a, b| a.0.cmp(&b.0));
+    pairs
 }
 
 impl DagLeafBuilder {
@@ -34,16 +34,26 @@ impl DagLeafBuilder {
             .leaf_type
             .ok_or_else(|| ScionicError::InvalidLeaf("Leaf must have a type".to_string()))?;
 
-        // Build merkle root for links
+        // Build merkle root for links (matching TypeScript/Go behavior exactly)
         let merkle_root = if self.links.len() > 1 {
-            let mut builder = MerkleTreeBuilder::new();
-            for link in &self.links {
-                builder.add_leaf(link.clone(), link.as_bytes().to_vec());
-            }
-            let tree = builder.build()?;
-            Some(tree.root)
+            // Sort links, hash each one, then build tree
+            let mut sorted_links = self.links.clone();
+            sorted_links.sort();
+
+            let hashed_leaves: Vec<_> = sorted_links
+                .iter()
+                .map(|link| {
+                    let mut hasher = Sha256::new();
+                    hasher.update(link.as_bytes());
+                    hasher.finalize().to_vec()
+                })
+                .collect();
+
+            Some(build_merkle_root(&hashed_leaves))
         } else if self.links.len() == 1 {
-            Some(self.links[0].as_bytes().to_vec())
+            let mut hasher = Sha256::new();
+            hasher.update(self.links[0].as_bytes());
+            Some(hasher.finalize().to_vec())
         } else {
             None
         };
@@ -130,16 +140,26 @@ impl DagLeafBuilder {
             .leaf_type
             .ok_or_else(|| ScionicError::InvalidLeaf("Leaf must have a type".to_string()))?;
 
-        // Build merkle root for links
+        // Build merkle root for links (matching TypeScript/Go behavior exactly)
         let merkle_root = if self.links.len() > 1 {
-            let mut builder = MerkleTreeBuilder::new();
-            for link in &self.links {
-                builder.add_leaf(link.clone(), link.as_bytes().to_vec());
-            }
-            let tree = builder.build()?;
-            Some(tree.root)
+            // Sort links, hash each one, then build tree
+            let mut sorted_links = self.links.clone();
+            sorted_links.sort();
+
+            let hashed_leaves: Vec<_> = sorted_links
+                .iter()
+                .map(|link| {
+                    let mut hasher = Sha256::new();
+                    hasher.update(link.as_bytes());
+                    hasher.finalize().to_vec()
+                })
+                .collect();
+
+            Some(build_merkle_root(&hashed_leaves))
         } else if self.links.len() == 1 {
-            Some(self.links[0].as_bytes().to_vec())
+            let mut hasher = Sha256::new();
+            hasher.update(self.links[0].as_bytes());
+            Some(hasher.finalize().to_vec())
         } else {
             None
         };

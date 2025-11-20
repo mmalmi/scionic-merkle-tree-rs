@@ -168,6 +168,31 @@ pub fn verify_proof(data: &[u8], proof: &MerkleProof, root: &[u8]) -> Result<()>
     }
 }
 
+/// Build a merkle tree root directly from pre-hashed leaves
+pub fn build_merkle_root(leaves: &[Vec<u8>]) -> Vec<u8> {
+    if leaves.is_empty() {
+        return vec![];
+    }
+    if leaves.len() == 1 {
+        return leaves[0].clone();
+    }
+
+    let mut current_level = leaves.to_vec();
+    while current_level.len() > 1 {
+        let mut next_level = Vec::new();
+        for chunk in current_level.chunks(2) {
+            let hash = if chunk.len() == 2 {
+                hash_pair(&chunk[0], &chunk[1])
+            } else {
+                chunk[0].clone()
+            };
+            next_level.push(hash);
+        }
+        current_level = next_level;
+    }
+    current_level[0].clone()
+}
+
 /// Builder for creating Merkle trees
 pub struct MerkleTreeBuilder {
     data: Vec<(String, Vec<u8>)>,
