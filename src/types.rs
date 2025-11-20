@@ -1,16 +1,19 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-/// Custom serde module for Option<Vec<u8>> with bytes encoding
-mod serde_bytes_option {
+mod serde_base64_option {
     use serde::{Deserialize, Deserializer, Serializer};
+    use base64::{engine::general_purpose::STANDARD, Engine};
 
     pub fn serialize<S>(value: &Option<Vec<u8>>, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
         match value {
-            Some(bytes) => serializer.serialize_some(&serde_bytes::Bytes::new(bytes)),
+            Some(bytes) => {
+                let encoded = STANDARD.encode(bytes);
+                serializer.serialize_some(&encoded)
+            }
             None => serializer.serialize_none(),
         }
     }
@@ -19,8 +22,8 @@ mod serde_bytes_option {
     where
         D: Deserializer<'de>,
     {
-        let opt: Option<serde_bytes::ByteBuf> = Option::deserialize(deserializer)?;
-        Ok(opt.map(|b| b.into_vec()))
+        let opt: Option<String> = Option::deserialize(deserializer)?;
+        Ok(opt.map(|s| STANDARD.decode(s).unwrap()))
     }
 }
 
@@ -63,7 +66,7 @@ pub struct DagLeaf {
         rename = "ContentHash",
         skip_serializing_if = "Option::is_none",
         default,
-        with = "serde_bytes_option"
+        with = "serde_base64_option"
     )]
     pub content_hash: Option<Vec<u8>>,
 
@@ -72,7 +75,7 @@ pub struct DagLeaf {
         rename = "Content",
         skip_serializing_if = "Option::is_none",
         default,
-        with = "serde_bytes_option"
+        with = "serde_base64_option"
     )]
     pub content: Option<Vec<u8>>,
 
@@ -81,7 +84,7 @@ pub struct DagLeaf {
         rename = "ClassicMerkleRoot",
         skip_serializing_if = "Option::is_none",
         default,
-        with = "serde_bytes_option"
+        with = "serde_base64_option"
     )]
     pub classic_merkle_root: Option<Vec<u8>>,
 
