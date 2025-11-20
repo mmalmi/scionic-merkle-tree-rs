@@ -1,4 +1,17 @@
 /// Interoperability tests between Rust and Go implementations
+///
+/// These tests verify bidirectional compatibility:
+/// - Rust can read and verify Go-created DAGs
+/// - Go can read and verify Rust-created DAGs
+///
+/// Run with:
+///   cargo test --test interop_test -- --nocapture
+///
+/// Individual tests:
+///   cargo test --test interop_test test_go_creates_rust_reads -- --nocapture
+///   cargo test --test interop_test test_rust_creates_go_reads -- --nocapture
+///
+/// Requires: Go implementation at /workspace/Scionic-Merkle-Tree
 use scionic_merkle_tree_rs::{create_dag, Dag, Result};
 use std::fs;
 use std::process::Command;
