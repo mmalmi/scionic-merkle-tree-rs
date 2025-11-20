@@ -126,7 +126,7 @@ fn process_file(
     base_path: &Path,
     builder: &mut DagBuilder,
     is_root: bool,
-    _config: &DagBuilderConfig,
+    config: &DagBuilderConfig,
 ) -> Result<DagLeaf> {
     let rel_path = if is_root {
         path.file_name()
@@ -143,12 +143,16 @@ fn process_file(
     let data = fs::read(path)?;
     let mut leaf_builder = DagLeafBuilder::new(rel_path.clone()).set_type(LeafType::File);
 
-    // Chunk the file if it's larger than the chunk size
-    if data.len() > DEFAULT_CHUNK_SIZE {
-        let chunks: Vec<_> = data.chunks(DEFAULT_CHUNK_SIZE).collect();
+    // Determine chunk size to use
+    let chunk_size = config.chunk_size.unwrap_or(DEFAULT_CHUNK_SIZE);
+
+    // Chunk the file if it's larger than the chunk size (and chunking is enabled)
+    if chunk_size > 0 && data.len() > chunk_size {
+        let chunks: Vec<_> = data.chunks(chunk_size).collect();
 
         for (i, chunk) in chunks.iter().enumerate() {
-            let chunk_name = i.to_string();
+            // Use path-based naming to match Go's sequential implementation
+            let chunk_name = format!("{}/{}", rel_path, i);
             let chunk_leaf = DagLeafBuilder::new(chunk_name)
                 .set_type(LeafType::Chunk)
                 .set_data(chunk.to_vec())

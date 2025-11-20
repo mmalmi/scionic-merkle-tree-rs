@@ -188,6 +188,9 @@ pub struct DagBuilderConfig {
 
     /// Additional metadata for root
     pub additional_data: HashMap<String, String>,
+
+    /// Chunk size (None = use default, Some(0) = disable chunking)
+    pub chunk_size: Option<usize>,
 }
 
 impl Default for DagBuilderConfig {
@@ -197,6 +200,7 @@ impl Default for DagBuilderConfig {
             max_workers: 0,
             timestamp_root: false,
             additional_data: HashMap::new(),
+            chunk_size: None,
         }
     }
 }
@@ -223,6 +227,16 @@ impl DagBuilderConfig {
 
     pub fn with_additional_data(mut self, data: HashMap<String, String>) -> Self {
         self.additional_data = data;
+        self
+    }
+
+    pub fn with_chunk_size(mut self, size: usize) -> Self {
+        self.chunk_size = Some(size);
+        self
+    }
+
+    pub fn without_chunking(mut self) -> Self {
+        self.chunk_size = Some(0);
         self
     }
 }
