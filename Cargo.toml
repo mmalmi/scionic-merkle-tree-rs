@@ -1,0 +1,38 @@
+[package]
+name = "scionic-merkle-tree-rs"
+version = "0.1.0"
+edition = "2021"
+authors = ["Scionic Merkle Tree Contributors"]
+description = "Rust implementation of Scionic Merkle Trees - a hybrid of Merkle Trees and Merkle DAGs"
+license = "MIT"
+repository = "https://github.com/HORNET-Storage/Scionic-Merkle-Tree"
+keywords = ["merkle", "dag", "cryptography", "verification", "blockchain"]
+categories = ["cryptography", "data-structures"]
+
+[dependencies]
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_cbor = "0.11"
+
+# Hashing and CID
+sha2 = "0.10"
+cid = "0.11"
+multihash = "0.19"
+multibase = "0.9"
+
+# Error handling
+thiserror = "1.0"
+anyhow = "1.0"
+
+# File operations
+walkdir = "2.5"
+
+# Utilities
+hex = "0.4"
+chrono = "0.4"
+
+[dev-dependencies]
+tempfile = "3.13"
+criterion = "0.5"
+chrono = "0.4"
