@@ -35,7 +35,7 @@ fn test_go_creates_rust_reads() -> Result<()> {
         .current_dir("/workspace/Scionic-Merkle-Tree")
         .args(&[
             "run",
-            "tests/test_helper.go",
+            "cmd/test_helper.go",
             "create",
             input_dir.to_str().unwrap(),
             go_cbor.to_str().unwrap(),
@@ -103,7 +103,7 @@ fn test_rust_creates_go_reads() -> Result<()> {
         .current_dir("/workspace/Scionic-Merkle-Tree")
         .args(&[
             "run",
-            "tests/test_helper.go",
+            "cmd/test_helper.go",
             "verify",
             rust_cbor.to_str().unwrap(),
         ])
@@ -148,7 +148,7 @@ fn test_same_input_same_root() -> Result<()> {
         .current_dir("/workspace/Scionic-Merkle-Tree")
         .args(&[
             "run",
-            "tests/test_helper.go",
+            "cmd/test_helper.go",
             "info",
             input_dir.to_str().unwrap(),
         ])
