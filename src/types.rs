@@ -1,6 +1,29 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+/// Custom serde module for Option<Vec<u8>> with bytes encoding
+mod serde_bytes_option {
+    use serde::{Deserialize, Deserializer, Serializer};
+
+    pub fn serialize<S>(value: &Option<Vec<u8>>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match value {
+            Some(bytes) => serializer.serialize_some(&serde_bytes::Bytes::new(bytes)),
+            None => serializer.serialize_none(),
+        }
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<Option<Vec<u8>>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let opt: Option<serde_bytes::ByteBuf> = Option::deserialize(deserializer)?;
+        Ok(opt.map(|b| b.into_vec()))
+    }
+}
+
 /// Type of leaf in the DAG
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -36,15 +59,30 @@ pub struct DagLeaf {
     pub leaf_type: LeafType,
 
     /// Hash of the content (SHA256)
-    #[serde(rename = "ContentHash", skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "ContentHash",
+        skip_serializing_if = "Option::is_none",
+        default,
+        with = "serde_bytes_option"
+    )]
     pub content_hash: Option<Vec<u8>>,
 
     /// Actual content bytes
-    #[serde(rename = "Content", skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "Content",
+        skip_serializing_if = "Option::is_none",
+        default,
+        with = "serde_bytes_option"
+    )]
     pub content: Option<Vec<u8>>,
 
     /// Classic Merkle tree root for children
-    #[serde(rename = "ClassicMerkleRoot", skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "ClassicMerkleRoot",
+        skip_serializing_if = "Option::is_none",
+        default,
+        with = "serde_bytes_option"
+    )]
     pub classic_merkle_root: Option<Vec<u8>>,
 
     /// Number of links this leaf has
@@ -97,7 +135,7 @@ pub struct ClassicTreeBranch {
 pub struct MerkleProof {
     /// Sibling hashes along the path to root
     #[serde(rename = "Siblings")]
-    pub siblings: Vec<Vec<u8>>,
+    pub siblings: Vec<serde_bytes::ByteBuf>,
 
     /// Path bitmap (uint32) indicating whether sibling is on left (0) or right (1)
     #[serde(rename = "Path")]

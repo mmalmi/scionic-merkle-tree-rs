@@ -7,6 +7,11 @@ use serde::Serialize;
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 
+/// Convert CID to string (Go uses default base32 lower)
+fn cid_to_string(cid: &Cid) -> String {
+    cid.to_string()
+}
+
 /// Sort a HashMap by keys and return as Vec of tuples
 fn sort_map_for_verification(map: &Option<HashMap<String, String>>) -> Vec<(String, String)> {
     match map {
@@ -89,7 +94,7 @@ impl DagLeafBuilder {
         let mh = Multihash::<64>::wrap(0x12, &hash_bytes) // 0x12 = SHA2-256
             .map_err(|e| ScionicError::InvalidCid(e.to_string()))?;
 
-        let cid = Cid::new_v1(0x71, mh); // 0x71 = CBOR codec
+        let cid = Cid::new_v1(0x51, mh); // 0x51 = CBOR codec (matching Go)
 
         // Sort links (for directories only, preserve order for files)
         let mut sorted_links = self.links.clone();
@@ -98,7 +103,7 @@ impl DagLeafBuilder {
         }
 
         Ok(DagLeaf {
-            hash: cid.to_string(),
+            hash: cid_to_string(&cid),
             item_name: self.item_name,
             leaf_type,
             content_hash,
@@ -210,7 +215,7 @@ impl DagLeafBuilder {
         let mh = Multihash::<64>::wrap(0x12, &hash_bytes) // 0x12 = SHA2-256
             .map_err(|e| ScionicError::InvalidCid(e.to_string()))?;
 
-        let cid = Cid::new_v1(0x71, mh); // 0x71 = CBOR codec
+        let cid = Cid::new_v1(0x51, mh); // 0x51 = CBOR codec (matching Go)
 
         // Sort links (for directories only)
         let mut sorted_links = self.links.clone();
@@ -219,7 +224,7 @@ impl DagLeafBuilder {
         }
 
         Ok(DagLeaf {
-            hash: cid.to_string(),
+            hash: cid_to_string(&cid),
             item_name: self.item_name,
             leaf_type,
             content_hash,
@@ -278,13 +283,14 @@ impl DagLeaf {
         let mh = Multihash::<64>::wrap(0x12, &hash_bytes) // 0x12 = SHA2-256
             .map_err(|e| ScionicError::InvalidCid(e.to_string()))?;
 
-        let cid = Cid::new_v1(0x71, mh); // 0x71 = CBOR codec
+        let cid = Cid::new_v1(0x51, mh); // 0x51 = CBOR codec (matching Go)
 
         // Compare with stored hash
-        if cid.to_string() != self.hash {
+        let computed_hash = cid_to_string(&cid);
+        if computed_hash != self.hash {
             return Err(ScionicError::HashMismatch {
                 expected: self.hash.clone(),
-                got: cid.to_string(),
+                got: computed_hash,
             });
         }
 
@@ -340,13 +346,14 @@ impl DagLeaf {
         let mh = Multihash::<64>::wrap(0x12, &hash_bytes) // 0x12 = SHA2-256
             .map_err(|e| ScionicError::InvalidCid(e.to_string()))?;
 
-        let cid = Cid::new_v1(0x71, mh); // 0x71 = CBOR codec
+        let cid = Cid::new_v1(0x51, mh); // 0x51 = CBOR codec (matching Go)
 
         // Compare with stored hash
-        if cid.to_string() != self.hash {
+        let computed_hash = cid_to_string(&cid);
+        if computed_hash != self.hash {
             return Err(ScionicError::HashMismatch {
                 expected: self.hash.clone(),
-                got: cid.to_string(),
+                got: computed_hash,
             });
         }
 

@@ -127,7 +127,7 @@ fn generate_proof(leaf_index: usize, levels: &[Vec<Vec<u8>>]) -> MerkleProof {
         let sibling_index = if is_right { index - 1 } else { index + 1 };
 
         if sibling_index < level.len() {
-            siblings.push(level[sibling_index].clone());
+            siblings.push(serde_bytes::ByteBuf::from(level[sibling_index].clone()));
         }
 
         index /= 2;
@@ -155,9 +155,9 @@ pub fn verify_proof(data: &[u8], proof: &MerkleProof, root: &[u8]) -> Result<()>
         let sibling_on_right = (proof.path & (1 << depth)) != 0;
 
         current_hash = if sibling_on_right {
-            hash_pair(&current_hash, sibling)
+            hash_pair(&current_hash, sibling.as_slice())
         } else {
-            hash_pair(sibling, &current_hash)
+            hash_pair(sibling.as_slice(), &current_hash)
         };
     }
 

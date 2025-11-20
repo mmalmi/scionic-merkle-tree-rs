@@ -168,18 +168,18 @@ fn test_cid_format() -> Result<()> {
 
     let dag = create_dag(&file, false)?;
 
-    // Verify CID format (should start with "bafy" for CIDv1)
+    // Verify CID format (should start with "bafi" for CIDv1 with CBOR codec 0x51 - matching Go)
     assert!(
-        dag.root.starts_with("bafy"),
-        "Root CID should be CIDv1 format (base32): {}",
+        dag.root.starts_with("bafi"),
+        "Root CID should be CIDv1 CBOR format: {}",
         dag.root
     );
 
     // All leaf hashes should also be valid CIDs
     for (hash, _) in &dag.leaves {
         assert!(
-            hash.starts_with("bafy"),
-            "Leaf hash should be CIDv1 format: {}",
+            hash.starts_with("bafi"),
+            "Leaf hash should be CIDv1 CBOR format: {}",
             hash
         );
     }
