@@ -22,9 +22,19 @@ fn find_go_repo_path() -> Option<PathBuf> {
     None
 }
 
+/// Check if test_helper.go is available (local addition, not in official repo)
+fn test_helper_available() -> bool {
+    if let Some(repo) = find_go_repo_path() {
+        // Check both possible locations
+        repo.join("cmd/test_helper.go").exists() || repo.join("tests/test_helper.go").exists()
+    } else {
+        false
+    }
+}
+
 /// Check if Go implementation is available
 fn go_implementation_available() -> bool {
-    find_go_repo_path().is_some()
+    test_helper_available()
 }
 
 /// Create a DAG using the Go implementation

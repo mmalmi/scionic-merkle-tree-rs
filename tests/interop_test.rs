@@ -33,8 +33,16 @@ fn find_go_repo() -> Option<PathBuf> {
     None
 }
 
+fn test_helper_available() -> bool {
+    if let Some(repo) = find_go_repo() {
+        repo.join("cmd/test_helper.go").exists()
+    } else {
+        false
+    }
+}
+
 fn go_available() -> bool {
-    Command::new("go").arg("version").output().is_ok() && find_go_repo().is_some()
+    Command::new("go").arg("version").output().is_ok() && test_helper_available()
 }
 
 fn set_go_path() -> String {
