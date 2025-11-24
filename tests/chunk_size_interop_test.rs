@@ -13,6 +13,7 @@ use tempfile::TempDir;
 
 fn go_available() -> bool {
     Command::new("go").arg("version").output().is_ok()
+        && std::path::Path::new("/workspace/Scionic-Merkle-Tree").exists()
 }
 
 fn set_go_path() -> String {

@@ -44,8 +44,8 @@ jobs:
     - name: Build
       run: cargo build --verbose
 
-    - name: Run tests (skip Go interop)
-      run: cargo test --verbose -- --skip go_compatibility --skip interop --skip chunk_size_interop
+    - name: Run tests (Go interop tests auto-skip)
+      run: cargo test --verbose
 
   test-full:
     name: Full Tests (With Go Interop)

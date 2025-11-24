@@ -21,18 +21,17 @@ This script runs:
 You can also run individual test suites:
 
 ```bash
-# Basic tests (what CI runs on stable/beta Rust)
-cargo test --verbose -- --skip go_compatibility --skip interop --skip chunk_size_interop
+# All tests (Go interop tests auto-skip if Go repo not available)
+cargo test --verbose
 
 # Clippy lints
 cargo clippy -- -D warnings
 
 # Format check
 cargo fmt -- --check
-
-# Full tests with Go interop (requires Go repo checked out at ../Scionic-Merkle-Tree)
-cargo test --verbose
 ```
+
+**Note:** Tests automatically detect if the Go repository is available at `/workspace/Scionic-Merkle-Tree` and skip Go interop tests if it's not found. This means you can safely run `cargo test` anywhere - tests will adapt based on what's available.
 
 ## Method 2: Use `act` to Simulate GitHub Actions
 
@@ -78,15 +77,16 @@ act -l
 
 Our CI has 4 jobs:
 
-1. **test-basic** - Fast tests without external dependencies
+1. **test-basic** - All tests (Go interop auto-skipped)
    - Runs on stable & beta Rust
-   - Skips Go interop tests
+   - Go interop tests skip if Go repo unavailable
    - Caches cargo registry/build
+   - All core tests run
 
-2. **test-full** - Complete test suite
+2. **test-full** - Complete test suite with Go interop
    - Runs on stable Rust
-   - Includes Go interop tests
-   - Checks out Go implementation
+   - Checks out Go implementation first
+   - All tests including Go interop run
 
 3. **clippy** - Linting checks
    - Runs on stable Rust
@@ -95,6 +95,8 @@ Our CI has 4 jobs:
 4. **fmt** - Format checks
    - Runs on stable Rust
    - Ensures consistent code formatting
+
+**Key feature:** Tests automatically detect dependencies and skip gracefully. No need to maintain skip lists!
 
 ## Troubleshooting
 

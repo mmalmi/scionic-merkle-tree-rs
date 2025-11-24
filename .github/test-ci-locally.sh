@@ -14,11 +14,11 @@ RED='\033[0;31m'
 NC='\033[0m' # No Color
 
 # Test basic tests
-echo "=== Test 1: Basic Tests (No Go Interop) ==="
-echo "Command: cargo test --verbose -- --skip go_compatibility --skip interop --skip chunk_size_interop"
+echo "=== Test 1: Basic Tests (Go interop tests auto-skip if Go repo unavailable) ==="
+echo "Command: cargo test --verbose"
 echo
 
-cargo test --verbose -- --skip go_compatibility --skip interop --skip chunk_size_interop && \
+cargo test --verbose && \
 echo -e "${GREEN}✓ Basic tests passed${NC}" || \
 (echo -e "${RED}✗ Basic tests failed${NC}" && exit 1)
 
