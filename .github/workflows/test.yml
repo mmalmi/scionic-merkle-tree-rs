@@ -59,7 +59,7 @@ jobs:
     - name: Checkout Go implementation
       uses: actions/checkout@v4
       with:
-        repository: HORNET-Storage/Scionic-Merkle-Tree
+        repository: mmalmi/Scionic-Merkle-Tree
         path: Scionic-Merkle-Tree
 
     - name: Setup Rust
