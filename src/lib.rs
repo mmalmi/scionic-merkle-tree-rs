@@ -81,11 +81,13 @@ pub mod error;
 pub mod leaf;
 pub mod merkle_tree;
 pub mod serialize;
+pub mod streaming;
 pub mod types;
 
 // Re-export commonly used items
 pub use dag::{create_dag, create_dag_with_config};
 pub use error::{Result, ScionicError};
+pub use streaming::{create_dag_from_stream, StreamingDagBuilder};
 pub use types::{
     ClassicTreeBranch, Dag, DagBuilderConfig, DagLeaf, DagLeafBuilder, LeafType, MerkleProof,
     TransmissionPacket, DEFAULT_CHUNK_SIZE,
