@@ -54,7 +54,13 @@ jobs:
     steps:
     - uses: actions/checkout@v4
       with:
-        path: scionic-merkle-tree-rs
+        path: rust
+
+    - name: Checkout Go implementation
+      uses: actions/checkout@v4
+      with:
+        repository: HORNET-Storage/Scionic-Merkle-Tree
+        path: go-impl
 
     - name: Setup Rust
       uses: dtolnay/rust-toolchain@stable
@@ -64,14 +70,13 @@ jobs:
       with:
         go-version: '1.21'
 
-    - name: Checkout Go implementation
-      uses: actions/checkout@v4
-      with:
-        repository: HORNET-Storage/Scionic-Merkle-Tree
-        path: Scionic-Merkle-Tree
+    - name: Create symlink for Go repo
+      run: |
+        mkdir -p /workspace
+        ln -s "${{ github.workspace }}/go-impl" /workspace/Scionic-Merkle-Tree
 
     - name: Build Go implementation
-      working-directory: Scionic-Merkle-Tree
+      working-directory: go-impl
       run: go build -o scionic-merkle-tree ./cmd
 
     - name: Cache cargo registry
@@ -89,19 +94,16 @@ jobs:
     - name: Cache cargo build
       uses: actions/cache@v4
       with:
-        path: scionic-merkle-tree-rs/target
+        path: rust/target
         key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
 
     - name: Build
-      working-directory: scionic-merkle-tree-rs
+      working-directory: rust
       run: cargo build --verbose
 
     - name: Run full test suite
-      working-directory: scionic-merkle-tree-rs
+      working-directory: rust
       run: cargo test --verbose
-      env:
-        # Make Go binary available to tests
-        PATH: ${{ github.workspace }}/Scionic-Merkle-Tree:${{ env.PATH }}
 
   clippy:
     name: Clippy (Lints)

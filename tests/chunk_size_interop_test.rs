@@ -8,12 +8,27 @@
 ///   cargo test --test chunk_size_interop_test -- --nocapture
 use scionic_merkle_tree_rs::{create_dag, create_dag_with_config, Dag, DagBuilderConfig, Result};
 use std::fs;
+use std::path::PathBuf;
 use std::process::Command;
 use tempfile::TempDir;
 
+fn find_go_repo() -> Option<PathBuf> {
+    let candidates = vec![
+        PathBuf::from("/workspace/Scionic-Merkle-Tree"),
+        PathBuf::from("../Scionic-Merkle-Tree"),
+        std::env::current_dir().ok()?.join("../Scionic-Merkle-Tree"),
+    ];
+
+    for path in candidates {
+        if path.exists() && path.join("go.mod").exists() {
+            return Some(path);
+        }
+    }
+    None
+}
+
 fn go_available() -> bool {
-    Command::new("go").arg("version").output().is_ok()
-        && std::path::Path::new("/workspace/Scionic-Merkle-Tree").exists()
+    Command::new("go").arg("version").output().is_ok() && find_go_repo().is_some()
 }
 
 fn set_go_path() -> String {
@@ -29,9 +44,11 @@ fn create_dag_with_go_chunk_size(
     output_cbor: &str,
     chunk_size: i64,
 ) -> std::io::Result<std::process::Output> {
+    let go_repo = find_go_repo().expect("Go repo should be available");
+
     Command::new("go")
         .env("PATH", set_go_path())
-        .current_dir("/workspace/Scionic-Merkle-Tree")
+        .current_dir(&go_repo)
         .args(&[
             "run",
             "cmd/test_helper_chunk.go",

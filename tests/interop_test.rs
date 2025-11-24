@@ -14,12 +14,27 @@
 /// Requires: Go implementation at /workspace/Scionic-Merkle-Tree
 use scionic_merkle_tree_rs::{create_dag, Dag, Result};
 use std::fs;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 use tempfile::TempDir;
 
+fn find_go_repo() -> Option<PathBuf> {
+    let candidates = vec![
+        PathBuf::from("/workspace/Scionic-Merkle-Tree"),
+        PathBuf::from("../Scionic-Merkle-Tree"),
+        std::env::current_dir().ok()?.join("../Scionic-Merkle-Tree"),
+    ];
+
+    for path in candidates {
+        if path.exists() && path.join("go.mod").exists() {
+            return Some(path);
+        }
+    }
+    None
+}
+
 fn go_available() -> bool {
-    Command::new("go").arg("version").output().is_ok()
-        && std::path::Path::new("/workspace/Scionic-Merkle-Tree").exists()
+    Command::new("go").arg("version").output().is_ok() && find_go_repo().is_some()
 }
 
 fn set_go_path() -> String {
@@ -46,10 +61,12 @@ fn test_go_creates_rust_reads() -> Result<()> {
 
     let go_cbor = temp_dir.path().join("go.cbor");
 
+    let go_repo = find_go_repo().expect("Go repo should be available");
+
     // Create DAG with Go
     let output = Command::new("go")
         .env("PATH", set_go_path())
-        .current_dir("/workspace/Scionic-Merkle-Tree")
+        .current_dir(&go_repo)
         .args(&[
             "run",
             "cmd/test_helper.go",
@@ -114,10 +131,12 @@ fn test_rust_creates_go_reads() -> Result<()> {
     let rust_cbor = temp_dir.path().join("rust.cbor");
     rust_dag.save_to_file(&rust_cbor)?;
 
+    let go_repo = find_go_repo().expect("Go repo should be available");
+
     // Try to verify with Go
     let output = Command::new("go")
         .env("PATH", set_go_path())
-        .current_dir("/workspace/Scionic-Merkle-Tree")
+        .current_dir(&go_repo)
         .args(&[
             "run",
             "cmd/test_helper.go",
@@ -159,10 +178,12 @@ fn test_same_input_same_root() -> Result<()> {
     let rust_dag = create_dag(&input_dir, false)?;
     println!("Rust root: {}", rust_dag.root);
 
+    let go_repo = find_go_repo().expect("Go repo should be available");
+
     // Create with Go
     let output = Command::new("go")
         .env("PATH", set_go_path())
-        .current_dir("/workspace/Scionic-Merkle-Tree")
+        .current_dir(&go_repo)
         .args(&[
             "run",
             "cmd/test_helper.go",
