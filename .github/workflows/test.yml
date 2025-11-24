@@ -60,7 +60,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         repository: HORNET-Storage/Scionic-Merkle-Tree
-        path: go-impl
+        path: Scionic-Merkle-Tree
 
     - name: Setup Rust
       uses: dtolnay/rust-toolchain@stable
@@ -70,13 +70,8 @@ jobs:
       with:
         go-version: '1.21'
 
-    - name: Create symlink for Go repo
-      run: |
-        mkdir -p /workspace
-        ln -s "${{ github.workspace }}/go-impl" /workspace/Scionic-Merkle-Tree
-
     - name: Build Go implementation
-      working-directory: go-impl
+      working-directory: Scionic-Merkle-Tree
       run: go build -o scionic-merkle-tree ./cmd
 
     - name: Cache cargo registry

@@ -2,12 +2,29 @@
 /// These tests verify that the Rust and Go implementations are compatible
 use scionic_merkle_tree_rs::{create_dag, Dag, Result};
 use std::fs;
+use std::path::PathBuf;
 use std::process::Command;
 use tempfile::TempDir;
 
+/// Find Go implementation path
+fn find_go_repo_path() -> Option<PathBuf> {
+    let candidates = [
+        PathBuf::from("/workspace/Scionic-Merkle-Tree"),
+        PathBuf::from("../Scionic-Merkle-Tree"),
+        std::env::current_dir().ok()?.join("../Scionic-Merkle-Tree"),
+    ];
+
+    for path in candidates {
+        if path.join("go.mod").exists() {
+            return Some(path);
+        }
+    }
+    None
+}
+
 /// Check if Go implementation is available
 fn go_implementation_available() -> bool {
-    std::path::Path::new("/workspace/Scionic-Merkle-Tree").exists()
+    find_go_repo_path().is_some()
 }
 
 /// Create a DAG using the Go implementation
@@ -16,10 +33,11 @@ fn create_dag_with_go(
     input_path: &str,
     output_cbor: &str,
 ) -> std::io::Result<std::process::Output> {
+    let go_path = find_go_repo_path().expect("Go repo not found");
     Command::new("go")
         .args(&[
             "run",
-            "/workspace/Scionic-Merkle-Tree/tests/test_helper.go",
+            go_path.join("tests/test_helper.go").to_str().unwrap(),
             "create",
             input_path,
             output_cbor,
@@ -29,10 +47,11 @@ fn create_dag_with_go(
 
 /// Verify a DAG using the Go implementation
 fn verify_dag_with_go(cbor_path: &str) -> std::io::Result<std::process::Output> {
+    let go_path = find_go_repo_path().expect("Go repo not found");
     Command::new("go")
         .args(&[
             "run",
-            "/workspace/Scionic-Merkle-Tree/tests/test_helper.go",
+            go_path.join("tests/test_helper.go").to_str().unwrap(),
             "verify",
             cbor_path,
         ])
