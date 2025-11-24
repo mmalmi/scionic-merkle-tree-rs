@@ -77,6 +77,7 @@
 //! ```
 
 pub mod dag;
+pub mod diff;
 pub mod error;
 pub mod leaf;
 pub mod merkle_tree;
@@ -86,6 +87,7 @@ pub mod types;
 
 // Re-export commonly used items
 pub use dag::{create_dag, create_dag_with_config};
+pub use diff::{diff, diff_from_new_leaves, DagDiff, DiffSummary, DiffType, LeafDiff};
 pub use error::{Result, ScionicError};
 pub use streaming::{create_dag_from_stream, StreamingDagBuilder};
 pub use types::{
