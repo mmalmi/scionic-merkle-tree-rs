@@ -70,10 +70,6 @@ jobs:
       with:
         go-version: '1.21'
 
-    - name: Build Go implementation
-      working-directory: Scionic-Merkle-Tree
-      run: go build -o scionic-merkle-tree ./cmd
-
     - name: Cache cargo registry
       uses: actions/cache@v4
       with:
