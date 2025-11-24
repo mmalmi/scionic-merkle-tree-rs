@@ -51,11 +51,8 @@ if [ ! -d "../Scionic-Merkle-Tree" ]; then
   echo "To test full CI, clone the Go repo:"
   echo "  cd .."
   echo "  git clone https://github.com/HORNET-Storage/Scionic-Merkle-Tree"
-  echo "  cd Scionic-Merkle-Tree && go build -o scionic-merkle-tree ./cmd"
   exit 0
 fi
-
-export PATH="../Scionic-Merkle-Tree:$PATH"
 cargo test --verbose && \
 echo -e "${GREEN}✓ Full tests passed${NC}" || \
 (echo -e "${RED}✗ Full tests failed${NC}" && exit 1)
