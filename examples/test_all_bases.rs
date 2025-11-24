@@ -1,6 +1,6 @@
 use cid::Cid;
-use multihash::Multihash;
 use multibase::Base;
+use multihash::Multihash;
 use sha2::{Digest, Sha256};
 
 fn main() {

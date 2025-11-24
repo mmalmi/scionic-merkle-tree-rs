@@ -6,8 +6,10 @@ use std::path::Path;
 
 /// Create a DAG from a file or directory
 pub fn create_dag(path: impl AsRef<Path>, timestamp_root: bool) -> Result<Dag> {
-    let mut config = DagBuilderConfig::default();
-    config.timestamp_root = timestamp_root;
+    let mut config = DagBuilderConfig {
+        timestamp_root,
+        ..Default::default()
+    };
 
     if timestamp_root {
         let timestamp = chrono::Utc::now().to_rfc3339();
@@ -24,9 +26,7 @@ pub fn create_dag_with_config(path: impl AsRef<Path>, config: DagBuilderConfig) 
     let path = path.as_ref();
 
     if !path.exists() {
-        return Err(ScionicError::PathNotFound(
-            path.display().to_string(),
-        ));
+        return Err(ScionicError::PathNotFound(path.display().to_string()));
     }
 
     let mut builder = DagBuilder::new();
@@ -39,8 +39,8 @@ pub fn create_dag_with_config(path: impl AsRef<Path>, config: DagBuilderConfig) 
     };
 
     // Build root leaf with metadata
-    let root_builder = DagLeafBuilder::new(root_leaf.item_name.clone())
-        .set_type(root_leaf.leaf_type.clone());
+    let root_builder =
+        DagLeafBuilder::new(root_leaf.item_name.clone()).set_type(root_leaf.leaf_type.clone());
 
     let root_builder = if let Some(content) = root_leaf.content {
         root_builder.set_data(content)
@@ -93,9 +93,7 @@ fn process_directory(
     let mut leaf_builder = DagLeafBuilder::new(rel_path).set_type(LeafType::Directory);
 
     // Read directory entries
-    let mut entries: Vec<_> = fs::read_dir(path)?
-        .filter_map(|e| e.ok())
-        .collect();
+    let mut entries: Vec<_> = fs::read_dir(path)?.filter_map(|e| e.ok()).collect();
 
     // Sort for deterministic ordering
     entries.sort_by_key(|e| e.file_name());
@@ -106,9 +104,21 @@ fn process_directory(
 
         // IMPORTANT: Keep base_path constant for all recursion
         let child_leaf = if metadata.is_dir() {
-            process_directory(&entry_path, if is_root { path } else { base_path }, builder, false, _config)?
+            process_directory(
+                &entry_path,
+                if is_root { path } else { base_path },
+                builder,
+                false,
+                _config,
+            )?
         } else {
-            process_file(&entry_path, if is_root { path } else { base_path }, builder, false, _config)?
+            process_file(
+                &entry_path,
+                if is_root { path } else { base_path },
+                builder,
+                false,
+                _config,
+            )?
         };
 
         builder
@@ -283,12 +293,10 @@ impl Dag {
 
     /// Find the parent of a given leaf
     fn find_parent(&self, child_hash: &str) -> Option<&DagLeaf> {
-        for leaf in self.leaves.values() {
-            if leaf.has_link(child_hash) {
-                return Some(leaf);
-            }
-        }
-        None
+        self.leaves
+            .values()
+            .find(|&leaf| leaf.has_link(child_hash))
+            .map(|v| v as _)
     }
 
     /// Recreate directory structure from DAG
@@ -538,9 +546,9 @@ impl Dag {
             let mut current_hash = leaf_hash.clone();
             while current_hash != self.root {
                 // Find parent
-                let parent = self
-                    .find_parent(&current_hash)
-                    .ok_or_else(|| ScionicError::MissingLeaf(format!("Parent not found for {}", current_hash)))?;
+                let parent = self.find_parent(&current_hash).ok_or_else(|| {
+                    ScionicError::MissingLeaf(format!("Parent not found for {}", current_hash))
+                })?;
 
                 partial_leaves.insert(parent.hash.clone(), parent.clone());
                 current_hash = parent.hash.clone();
@@ -592,11 +600,9 @@ impl Dag {
                     Ok(0)
                 }
             }
-            LeafType::Directory => {
-                Err(ScionicError::InvalidDag(
-                    "Cannot get size of directory DAG".to_string(),
-                ))
-            }
+            LeafType::Directory => Err(ScionicError::InvalidDag(
+                "Cannot get size of directory DAG".to_string(),
+            )),
         }
     }
 
@@ -647,9 +653,10 @@ impl Dag {
                 .get(link)
                 .ok_or_else(|| ScionicError::MissingLeaf(link.clone()))?;
 
-            let chunk_content = chunk.content.as_ref().ok_or_else(|| {
-                ScionicError::InvalidLeaf("Chunk has no content".to_string())
-            })?;
+            let chunk_content = chunk
+                .content
+                .as_ref()
+                .ok_or_else(|| ScionicError::InvalidLeaf("Chunk has no content".to_string()))?;
 
             let chunk_size = chunk_content.len() as u64;
             let chunk_end = current_offset + chunk_size - 1;

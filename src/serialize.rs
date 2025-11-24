@@ -65,12 +65,10 @@ impl Dag {
     }
 
     fn find_parent_for_transmission(&self, child_hash: &str) -> Option<&crate::types::DagLeaf> {
-        for leaf in self.leaves.values() {
-            if leaf.has_link(child_hash) {
-                return Some(leaf);
-            }
-        }
-        None
+        self.leaves
+            .values()
+            .find(|&leaf| leaf.has_link(child_hash))
+            .map(|v| v as _)
     }
 
     /// Apply a transmission packet to this DAG
@@ -79,7 +77,10 @@ impl Dag {
     }
 
     /// Verify and apply a transmission packet
-    pub fn apply_and_verify_transmission_packet(&mut self, packet: TransmissionPacket) -> Result<()> {
+    pub fn apply_and_verify_transmission_packet(
+        &mut self,
+        packet: TransmissionPacket,
+    ) -> Result<()> {
         // Verify the leaf
         if packet.leaf.hash == self.root {
             packet.leaf.verify_root_leaf()?;

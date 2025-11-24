@@ -17,10 +17,19 @@ fn main() {
             println!("\nFirst chunk found:");
             println!("  Hash: {}", leaf.hash);
             println!("  ItemName: {:?}", leaf.item_name);
-            println!("  Content length: {:?}", leaf.content.as_ref().map(|c| c.len()));
-            println!("  ContentHash: {:?}", leaf.content_hash.as_ref().map(|h| hex::encode(h)));
+            println!(
+                "  Content length: {:?}",
+                leaf.content.as_ref().map(|c| c.len())
+            );
+            println!(
+                "  ContentHash: {:?}",
+                leaf.content_hash.as_ref().map(|h| hex::encode(h))
+            );
             println!("  CurrentLinkCount: {}", leaf.current_link_count);
-            println!("  ClassicMerkleRoot: {:?}", leaf.classic_merkle_root.as_ref().map(|r| r.len()));
+            println!(
+                "  ClassicMerkleRoot: {:?}",
+                leaf.classic_merkle_root.as_ref().map(|r| r.len())
+            );
             println!("  AdditionalData: {:?}", leaf.additional_data);
 
             // Try to verify
@@ -41,7 +50,10 @@ fn main() {
     println!("  Type: {:?}", root_leaf.leaf_type);
     println!("  Links: {}", root_leaf.links.len());
     println!("  CurrentLinkCount: {}", root_leaf.current_link_count);
-    println!("  ClassicMerkleRoot len: {:?}", root_leaf.classic_merkle_root.as_ref().map(|r| r.len()));
+    println!(
+        "  ClassicMerkleRoot len: {:?}",
+        root_leaf.classic_merkle_root.as_ref().map(|r| r.len())
+    );
 
     match root_leaf.verify_root_leaf() {
         Ok(_) => println!("  ✅ Root verification: PASS"),

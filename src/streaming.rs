@@ -53,8 +53,7 @@ impl StreamingDagBuilder {
         }
 
         // Build parent file leaf
-        let mut leaf_builder = DagLeafBuilder::new(self.file_name.clone())
-            .set_type(LeafType::File);
+        let mut leaf_builder = DagLeafBuilder::new(self.file_name.clone()).set_type(LeafType::File);
 
         for chunk in &self.chunks {
             leaf_builder = leaf_builder.add_link(chunk.hash.clone());
@@ -67,7 +66,9 @@ impl StreamingDagBuilder {
     /// Finalize and return the complete DAG
     pub fn finalize(self) -> Result<Dag> {
         if self.chunks.is_empty() {
-            return Err(ScionicError::InvalidDag("No chunks to finalize".to_string()));
+            return Err(ScionicError::InvalidDag(
+                "No chunks to finalize".to_string(),
+            ));
         }
 
         let mut leaves = HashMap::new();
@@ -78,8 +79,7 @@ impl StreamingDagBuilder {
         }
 
         // Build root file leaf
-        let mut root_builder = DagLeafBuilder::new(self.file_name.clone())
-            .set_type(LeafType::File);
+        let mut root_builder = DagLeafBuilder::new(self.file_name.clone()).set_type(LeafType::File);
 
         for chunk in &self.chunks {
             root_builder = root_builder.add_link(chunk.hash.clone());
@@ -98,11 +98,7 @@ impl StreamingDagBuilder {
     }
 
     /// Stream from a reader, calling callback with CID after each chunk
-    pub fn stream_from_reader<R: Read, F>(
-        mut self,
-        mut reader: R,
-        mut callback: F,
-    ) -> Result<Dag>
+    pub fn stream_from_reader<R: Read, F>(mut self, mut reader: R, mut callback: F) -> Result<Dag>
     where
         F: FnMut(&str),
     {

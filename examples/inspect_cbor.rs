@@ -63,7 +63,11 @@ fn print_cbor_value(value: &serde_cbor::Value, indent: usize) {
             println!("{}Array[{}]", prefix, arr.len());
         }
         serde_cbor::Value::Text(s) => {
-            println!("{}Text: {}", prefix, if s.len() > 50 { &s[..50] } else { s });
+            println!(
+                "{}Text: {}",
+                prefix,
+                if s.len() > 50 { &s[..50] } else { s }
+            );
         }
         serde_cbor::Value::Bytes(b) => {
             println!("{}Bytes[{}]", prefix, b.len());

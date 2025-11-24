@@ -15,7 +15,7 @@ fn cid_to_string(cid: &Cid) -> String {
 /// Sort a HashMap by keys and return as Vec of tuples
 /// Always returns empty vec (never nil/null) to match Go's behavior
 fn sort_map_for_verification(map: &Option<HashMap<String, String>>) -> Vec<(String, String)> {
-    let m = map.as_ref().map(|m| m.clone()).unwrap_or_default();
+    let m = map.clone().unwrap_or_default();
     if m.is_empty() {
         return Vec::new();
     }
@@ -26,10 +26,7 @@ fn sort_map_for_verification(map: &Option<HashMap<String, String>>) -> Vec<(Stri
 
 impl DagLeafBuilder {
     /// Build a regular (non-root) leaf
-    pub fn build_leaf(
-        self,
-        additional_data: Option<HashMap<String, String>>,
-    ) -> Result<DagLeaf> {
+    pub fn build_leaf(self, additional_data: Option<HashMap<String, String>>) -> Result<DagLeaf> {
         let leaf_type = self
             .leaf_type
             .ok_or_else(|| ScionicError::InvalidLeaf("Leaf must have a type".to_string()))?;

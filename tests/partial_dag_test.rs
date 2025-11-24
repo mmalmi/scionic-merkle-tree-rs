@@ -110,7 +110,10 @@ fn test_get_partial_deep_hierarchy() -> Result<()> {
         current = current.join(format!("level{}", i));
         fs::create_dir(&current)?;
         // Add a file at each level
-        fs::write(current.join(format!("file{}.txt", i)), format!("content{}", i))?;
+        fs::write(
+            current.join(format!("file{}.txt", i)),
+            format!("content{}", i),
+        )?;
     }
 
     let root = temp_dir.path().join("root");

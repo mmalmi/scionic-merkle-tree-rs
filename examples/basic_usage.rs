@@ -12,7 +12,10 @@ fn main() -> Result<()> {
 
     // Create some example files
     println!("1. Creating example files...");
-    fs::write(input_dir.join("readme.txt"), b"Welcome to Scionic Merkle Trees!")?;
+    fs::write(
+        input_dir.join("readme.txt"),
+        b"Welcome to Scionic Merkle Trees!",
+    )?;
     fs::write(input_dir.join("data.txt"), b"Some important data here.")?;
 
     let subdir = input_dir.join("documents");

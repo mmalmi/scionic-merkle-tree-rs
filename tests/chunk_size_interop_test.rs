@@ -6,8 +6,7 @@
 ///
 /// Run with:
 ///   cargo test --test chunk_size_interop_test -- --nocapture
-
-use scionic_merkle_tree_rs::{create_dag, create_dag_with_config, DagBuilderConfig, Dag, Result};
+use scionic_merkle_tree_rs::{create_dag, create_dag_with_config, Dag, DagBuilderConfig, Result};
 use std::fs;
 use std::process::Command;
 use tempfile::TempDir;
@@ -93,12 +92,18 @@ fn test_bitcoin_pdf_various_chunk_sizes() -> Result<()> {
         (65536, "64KB - Small chunks"),
         (262144, "256KB - Medium chunks"),
         (1048576, "1MB - Large chunks"),
-        ((file_size + 1000) as usize, "Larger than file - No chunking"),
+        (
+            (file_size + 1000) as usize,
+            "Larger than file - No chunking",
+        ),
         (0, "Disabled chunking"),
     ];
 
     for (chunk_size, description) in chunk_sizes {
-        println!("\n--- Testing: {} (chunk_size={}) ---", description, chunk_size);
+        println!(
+            "\n--- Testing: {} (chunk_size={}) ---",
+            description, chunk_size
+        );
 
         // Create with Rust using library
         let config = if chunk_size == 0 {

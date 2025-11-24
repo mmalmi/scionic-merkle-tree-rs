@@ -22,7 +22,10 @@ fn go_available() -> bool {
 }
 
 fn set_go_path() -> String {
-    format!("{}:/home/dev/go/go/bin", std::env::var("PATH").unwrap_or_default())
+    format!(
+        "{}:/home/dev/go/go/bin",
+        std::env::var("PATH").unwrap_or_default()
+    )
 }
 
 /// Create DAG with Go, read with Rust
@@ -184,7 +187,9 @@ fn test_same_input_same_root() -> Result<()> {
     if rust_dag.root == go_root {
         println!("✓ Root hashes match!");
     } else {
-        println!("⚠ Root hashes differ (expected initially - need to align implementation details)");
+        println!(
+            "⚠ Root hashes differ (expected initially - need to align implementation details)"
+        );
     }
 
     Ok(())

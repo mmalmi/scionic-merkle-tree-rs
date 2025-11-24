@@ -28,11 +28,7 @@ fn test_calculate_labels_determinism() -> Result<()> {
     // Verify all snapshots are identical
     for (i, snapshot) in label_snapshots.iter().enumerate().skip(1) {
         let first = &label_snapshots[0];
-        assert_eq!(
-            snapshot, first,
-            "Iteration {} produced different labels",
-            i
-        );
+        assert_eq!(snapshot, first, "Iteration {} produced different labels", i);
     }
 
     Ok(())

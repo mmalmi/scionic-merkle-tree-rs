@@ -154,7 +154,10 @@ mod tests {
         fs::create_dir(&input_dir)?;
 
         for i in 0..10 {
-            fs::write(input_dir.join(format!("file{}.txt", i)), format!("Content {}", i))?;
+            fs::write(
+                input_dir.join(format!("file{}.txt", i)),
+                format!("Content {}", i),
+            )?;
         }
 
         let mut dag = create_dag(&input_dir, false)?;

@@ -175,7 +175,7 @@ pub struct TransmissionPacket {
 }
 
 /// Configuration for DAG building
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct DagBuilderConfig {
     /// Enable parallel processing
     pub enable_parallel: bool,
@@ -191,18 +191,6 @@ pub struct DagBuilderConfig {
 
     /// Chunk size (None = use default, Some(0) = disable chunking)
     pub chunk_size: Option<usize>,
-}
-
-impl Default for DagBuilderConfig {
-    fn default() -> Self {
-        Self {
-            enable_parallel: false,
-            max_workers: 0,
-            timestamp_root: false,
-            additional_data: HashMap::new(),
-            chunk_size: None,
-        }
-    }
 }
 
 impl DagBuilderConfig {

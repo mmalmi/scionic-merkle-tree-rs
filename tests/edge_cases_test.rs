@@ -60,7 +60,11 @@ fn test_special_characters_in_filename() -> Result<()> {
     fs::create_dir(&dir)?;
 
     // Note: Some special characters may not be valid on all filesystems
-    let filenames = vec!["file with spaces.txt", "file-dash.txt", "file_underscore.txt"];
+    let filenames = vec![
+        "file with spaces.txt",
+        "file-dash.txt",
+        "file_underscore.txt",
+    ];
 
     for name in &filenames {
         fs::write(dir.join(name), "content")?;

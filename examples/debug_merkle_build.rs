@@ -30,7 +30,8 @@ fn main() {
                 hasher.update(&chunk[0]);
                 hasher.update(&chunk[1]);
                 let hash = hasher.finalize().to_vec();
-                println!("  Pair {}: hash({} + {}) = {}",
+                println!(
+                    "  Pair {}: hash({} + {}) = {}",
                     i,
                     hex::encode(&chunk[0][..8]),
                     hex::encode(&chunk[1][..8]),

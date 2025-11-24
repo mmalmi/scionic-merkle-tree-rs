@@ -12,7 +12,10 @@ fn go_implementation_available() -> bool {
 
 /// Create a DAG using the Go implementation
 #[allow(dead_code)]
-fn create_dag_with_go(input_path: &str, output_cbor: &str) -> std::io::Result<std::process::Output> {
+fn create_dag_with_go(
+    input_path: &str,
+    output_cbor: &str,
+) -> std::io::Result<std::process::Output> {
     Command::new("go")
         .args(&[
             "run",
@@ -64,7 +67,10 @@ fn test_rust_creates_go_reads() -> Result<()> {
 
     if result.is_ok() {
         let output = result.unwrap();
-        println!("Go verification output: {:?}", String::from_utf8_lossy(&output.stdout));
+        println!(
+            "Go verification output: {:?}",
+            String::from_utf8_lossy(&output.stdout)
+        );
         // Note: This test is informational - Go might not be able to read our format yet
     }
 
@@ -259,7 +265,10 @@ fn test_content_addressing_is_deterministic() -> Result<()> {
         .collect();
 
     // File hashes should be identical since content is identical
-    assert_eq!(file_hash_1, file_hash_2, "File leaves should have same hash for same content");
+    assert_eq!(
+        file_hash_1, file_hash_2,
+        "File leaves should have same hash for same content"
+    );
 
     Ok(())
 }

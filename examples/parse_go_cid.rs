@@ -13,7 +13,10 @@ fn main() {
             // Try converting back
             println!("\nConverting back to string:");
             println!("Default: {}", cid.to_string());
-            println!("Base32Upper: {}", cid.to_string_of_base(multibase::Base::Base32Upper).unwrap());
+            println!(
+                "Base32Upper: {}",
+                cid.to_string_of_base(multibase::Base::Base32Upper).unwrap()
+            );
         }
         Err(e) => {
             println!("Failed to parse Go CID: {}", e);

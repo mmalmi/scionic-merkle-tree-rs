@@ -6,11 +6,7 @@ use sha2::{Digest, Sha256};
 #[test]
 fn test_merkle_root_with_3_leaves() {
     // Test with 3 leaves - Go duplicates the 3rd leaf
-    let leaves: Vec<Vec<u8>> = vec![
-        vec![1, 2, 3],
-        vec![4, 5, 6],
-        vec![7, 8, 9],
-    ];
+    let leaves: Vec<Vec<u8>> = vec![vec![1, 2, 3], vec![4, 5, 6], vec![7, 8, 9]];
 
     let root = build_merkle_root(&leaves);
 
@@ -34,15 +30,16 @@ fn test_merkle_root_with_3_leaves() {
     hasher_root.update(&level1_1);
     let expected_root = hasher_root.finalize().to_vec();
 
-    assert_eq!(root, expected_root, "Merkle root should match Go's duplication algorithm");
+    assert_eq!(
+        root, expected_root,
+        "Merkle root should match Go's duplication algorithm"
+    );
 }
 
 #[test]
 fn test_merkle_root_with_5_leaves() {
     // Test with 5 leaves
-    let leaves: Vec<Vec<u8>> = vec![
-        vec![1], vec![2], vec![3], vec![4], vec![5],
-    ];
+    let leaves: Vec<Vec<u8>> = vec![vec![1], vec![2], vec![3], vec![4], vec![5]];
 
     let root = build_merkle_root(&leaves);
 
@@ -84,15 +81,16 @@ fn test_merkle_root_with_5_leaves() {
     h_root.update(&l2_1);
     let expected_root = h_root.finalize().to_vec();
 
-    assert_eq!(root, expected_root, "Merkle root with 5 leaves should match Go's algorithm");
+    assert_eq!(
+        root, expected_root,
+        "Merkle root with 5 leaves should match Go's algorithm"
+    );
 }
 
 #[test]
 fn test_merkle_root_with_even_leaves() {
     // Test with 4 leaves (even - no duplication needed)
-    let leaves: Vec<Vec<u8>> = vec![
-        vec![1], vec![2], vec![3], vec![4],
-    ];
+    let leaves: Vec<Vec<u8>> = vec![vec![1], vec![2], vec![3], vec![4]];
 
     let root = build_merkle_root(&leaves);
 
@@ -115,5 +113,8 @@ fn test_merkle_root_with_even_leaves() {
     h_root.update(&l1_1);
     let expected_root = h_root.finalize().to_vec();
 
-    assert_eq!(root, expected_root, "Merkle root with even leaves should work correctly");
+    assert_eq!(
+        root, expected_root,
+        "Merkle root with even leaves should work correctly"
+    );
 }

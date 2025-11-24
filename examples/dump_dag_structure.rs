@@ -21,7 +21,10 @@ fn main() {
     println!("  LeafCount: {:?}", root_leaf.leaf_count);
     println!("  ContentSize: {:?}", root_leaf.content_size);
     println!("  DagSize: {:?}", root_leaf.dag_size);
-    println!("  ClassicMerkleRoot len: {:?}", root_leaf.classic_merkle_root.as_ref().map(|v| v.len()));
+    println!(
+        "  ClassicMerkleRoot len: {:?}",
+        root_leaf.classic_merkle_root.as_ref().map(|v| v.len())
+    );
     println!();
 
     // Find file leaf

@@ -17,8 +17,14 @@ fn main() {
             println!("Found chunk: {}", target_name);
             println!("  Hash: {}", leaf.hash);
             println!("  Type: {:?}", leaf.leaf_type);
-            println!("  Content length: {:?}", leaf.content.as_ref().map(|c| c.len()));
-            println!("  ContentHash: {:?}", leaf.content_hash.as_ref().map(|h| hex::encode(h)));
+            println!(
+                "  Content length: {:?}",
+                leaf.content.as_ref().map(|c| c.len())
+            );
+            println!(
+                "  ContentHash: {:?}",
+                leaf.content_hash.as_ref().map(|h| hex::encode(h))
+            );
 
             match leaf.verify_leaf() {
                 Ok(_) => println!("  ✅ Verification: PASS"),

@@ -1,5 +1,5 @@
-use scionic_merkle_tree_rs::Dag;
 use scionic_merkle_tree_rs::merkle_tree::build_merkle_root;
+use scionic_merkle_tree_rs::Dag;
 use sha2::{Digest, Sha256};
 use std::env;
 
@@ -39,9 +39,18 @@ fn main() {
 
     let computed_root = build_merkle_root(&hashed_leaves);
 
-    println!("Computed ClassicMerkleRoot: {}", hex::encode(&computed_root));
-    println!("Stored ClassicMerkleRoot:   {}",
-        root_leaf.classic_merkle_root.as_ref().map(|r| hex::encode(r)).unwrap_or_else(|| "None".to_string()));
+    println!(
+        "Computed ClassicMerkleRoot: {}",
+        hex::encode(&computed_root)
+    );
+    println!(
+        "Stored ClassicMerkleRoot:   {}",
+        root_leaf
+            .classic_merkle_root
+            .as_ref()
+            .map(|r| hex::encode(r))
+            .unwrap_or_else(|| "None".to_string())
+    );
 
     if root_leaf.classic_merkle_root.as_ref() == Some(&computed_root) {
         println!("✅ Merkle roots match!");

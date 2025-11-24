@@ -25,10 +25,7 @@ fn test_content_hash_verification() -> Result<()> {
         hasher.update(stored_content);
         let computed_hash = hasher.finalize();
 
-        let content_hash = file_leaf
-            .content_hash
-            .as_ref()
-            .expect("No content hash");
+        let content_hash = file_leaf.content_hash.as_ref().expect("No content hash");
 
         assert_eq!(&computed_hash[..], &content_hash[..]);
     }
