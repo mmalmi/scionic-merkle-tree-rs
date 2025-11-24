@@ -553,6 +553,135 @@ impl Dag {
             labels: None,
         })
     }
+
+    /// Get total size of file content (for files/chunks only, not directories)
+    pub fn get_total_size(&self) -> Result<u64> {
+        let root_leaf = self
+            .leaves
+            .get(&self.root)
+            .ok_or_else(|| ScionicError::MissingLeaf("Root leaf not found".to_string()))?;
+
+        match root_leaf.leaf_type {
+            LeafType::File => {
+                if !root_leaf.links.is_empty() {
+                    // Chunked file - sum up all chunk sizes
+                    let mut total_size = 0u64;
+                    for link in &root_leaf.links {
+                        let chunk = self
+                            .leaves
+                            .get(link)
+                            .ok_or_else(|| ScionicError::MissingLeaf(link.clone()))?;
+
+                        if let Some(ref content) = chunk.content {
+                            total_size += content.len() as u64;
+                        }
+                    }
+                    Ok(total_size)
+                } else if let Some(ref content) = root_leaf.content {
+                    // Non-chunked file
+                    Ok(content.len() as u64)
+                } else {
+                    Ok(0)
+                }
+            }
+            LeafType::Chunk => {
+                // Single chunk
+                if let Some(ref content) = root_leaf.content {
+                    Ok(content.len() as u64)
+                } else {
+                    Ok(0)
+                }
+            }
+            LeafType::Directory => {
+                Err(ScionicError::InvalidDag(
+                    "Cannot get size of directory DAG".to_string(),
+                ))
+            }
+        }
+    }
+
+    /// Read a byte range from a file DAG without loading entire file into memory
+    /// Returns the requested bytes. Range is inclusive [start, end].
+    pub fn read_range(&self, start: u64, end: u64) -> Result<Vec<u8>> {
+        let root_leaf = self
+            .leaves
+            .get(&self.root)
+            .ok_or_else(|| ScionicError::MissingLeaf("Root leaf not found".to_string()))?;
+
+        // Validate it's a file
+        if !matches!(root_leaf.leaf_type, LeafType::File | LeafType::Chunk) {
+            return Err(ScionicError::InvalidDag(
+                "Can only read ranges from file DAGs".to_string(),
+            ));
+        }
+
+        // Validate range
+        if start > end {
+            return Err(ScionicError::InvalidDag(format!(
+                "Invalid range: start ({}) > end ({})",
+                start, end
+            )));
+        }
+
+        // Handle non-chunked file
+        if root_leaf.links.is_empty() {
+            if let Some(ref content) = root_leaf.content {
+                let total_size = content.len() as u64;
+                if start >= total_size {
+                    return Ok(Vec::new());
+                }
+                let end = end.min(total_size - 1);
+                return Ok(content[start as usize..=end as usize].to_vec());
+            } else {
+                return Ok(Vec::new());
+            }
+        }
+
+        // Handle chunked file - read only needed chunks
+        let mut result = Vec::new();
+        let mut current_offset = 0u64;
+
+        for link in &root_leaf.links {
+            let chunk = self
+                .leaves
+                .get(link)
+                .ok_or_else(|| ScionicError::MissingLeaf(link.clone()))?;
+
+            let chunk_content = chunk.content.as_ref().ok_or_else(|| {
+                ScionicError::InvalidLeaf("Chunk has no content".to_string())
+            })?;
+
+            let chunk_size = chunk_content.len() as u64;
+            let chunk_end = current_offset + chunk_size - 1;
+
+            // Check if this chunk overlaps with requested range
+            if chunk_end >= start && current_offset <= end {
+                // Calculate what part of this chunk we need
+                let chunk_read_start = if current_offset >= start {
+                    0
+                } else {
+                    (start - current_offset) as usize
+                };
+
+                let chunk_read_end = if chunk_end <= end {
+                    chunk_size as usize - 1
+                } else {
+                    (end - current_offset) as usize
+                };
+
+                result.extend_from_slice(&chunk_content[chunk_read_start..=chunk_read_end]);
+            }
+
+            current_offset += chunk_size;
+
+            // Early exit if we've read past the end
+            if current_offset > end {
+                break;
+            }
+        }
+
+        Ok(result)
+    }
 }
 
 #[cfg(test)]
@@ -599,6 +728,112 @@ mod tests {
 
         let dag = create_dag(&file_path, false)?;
         dag.verify()?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_get_total_size_small_file() -> Result<()> {
+        let temp_dir = TempDir::new()?;
+        let file_path = temp_dir.path().join("test.txt");
+        let content = b"Hello, World! This is a test.";
+        fs::write(&file_path, content)?;
+
+        let dag = create_dag(&file_path, false)?;
+        let size = dag.get_total_size()?;
+
+        assert_eq!(size, content.len() as u64);
+        Ok(())
+    }
+
+    #[test]
+    fn test_read_range_small_file() -> Result<()> {
+        let temp_dir = TempDir::new()?;
+        let file_path = temp_dir.path().join("test.txt");
+        let content = b"0123456789ABCDEFGHIJ";
+        fs::write(&file_path, content)?;
+
+        let dag = create_dag(&file_path, false)?;
+
+        // Test reading first 5 bytes
+        let result = dag.read_range(0, 4)?;
+        assert_eq!(result, b"01234");
+
+        // Test reading middle bytes
+        let result = dag.read_range(5, 9)?;
+        assert_eq!(result, b"56789");
+
+        // Test reading last bytes
+        let result = dag.read_range(15, 19)?;
+        assert_eq!(result, b"FGHIJ");
+
+        // Test reading entire file
+        let result = dag.read_range(0, 19)?;
+        assert_eq!(result, content);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_read_range_chunked_file() -> Result<()> {
+        use crate::streaming::create_dag_from_stream;
+        use std::io::Cursor;
+
+        let _temp_dir = TempDir::new()?;
+
+        // Create a 10MB file with pattern
+        let size = 10 * 1024 * 1024;
+        let data: Vec<u8> = (0..size).map(|i| (i % 256) as u8).collect();
+
+        let cursor = Cursor::new(data.clone());
+        let dag = create_dag_from_stream(cursor, "large.bin", |_| {})?;
+
+        // Get total size
+        let total_size = dag.get_total_size()?;
+        assert_eq!(total_size, size as u64);
+
+        // Test reading from start
+        let result = dag.read_range(0, 999)?;
+        assert_eq!(result.len(), 1000);
+        assert_eq!(result, &data[0..1000]);
+
+        // Test reading from middle (across chunk boundaries)
+        let mid_start = 2 * 1024 * 1024 + 500;
+        let mid_end = mid_start + 999;
+        let result = dag.read_range(mid_start as u64, mid_end as u64)?;
+        assert_eq!(result.len(), 1000);
+        assert_eq!(result, &data[mid_start..=mid_end]);
+
+        // Test reading near end
+        let end_start = size - 1000;
+        let result = dag.read_range(end_start as u64, (size - 1) as u64)?;
+        assert_eq!(result.len(), 1000);
+        assert_eq!(result, &data[end_start..]);
+
+        // Test reading single byte
+        let result = dag.read_range(12345, 12345)?;
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0], data[12345]);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_read_range_edge_cases() -> Result<()> {
+        let temp_dir = TempDir::new()?;
+        let file_path = temp_dir.path().join("test.txt");
+        let content = b"Test";
+        fs::write(&file_path, content)?;
+
+        let dag = create_dag(&file_path, false)?;
+
+        // Test reading beyond file size
+        let result = dag.read_range(0, 999)?;
+        assert_eq!(result.len(), 4); // Should only return 4 bytes
+
+        // Test reading from beyond end of file
+        let result = dag.read_range(100, 200)?;
+        assert_eq!(result.len(), 0); // Should return empty
 
         Ok(())
     }
